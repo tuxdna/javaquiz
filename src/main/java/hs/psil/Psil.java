@@ -14,11 +14,11 @@ import java.util.Map;
 import java.util.Stack;
 
 enum TokenType {
-	NUMERIC, ALPHABETIC, LEFT_PAREN, RIGHT_PAREN, ADD, MULTIPLY, BIND
+	NUMERIC, ALPHABETIC, LEFT_PAREN, RIGHT_PAREN, ADD, MULTIPLY, SUBTRACT, BIND
 }
 
 enum SymbolType {
-	ADD, MULTIPLY, BIND
+	ADD, MULTIPLY, BIND, SUBTRACT
 }
 
 abstract class Expression {
@@ -67,7 +67,7 @@ class MultiplySymbol extends Symbol {
 	}
 
 	int evaluate(int... vals) {
-		int prod = 0;
+		int prod = 1;
 		for (int v : vals) {
 			prod *= v;
 		}
@@ -77,6 +77,29 @@ class MultiplySymbol extends Symbol {
 	@Override
 	public String toString() {
 		return String.format("MultiplySymbol()");
+	}
+}
+
+class SubtractSymbol extends Symbol {
+	public SubtractSymbol() {
+		super(SymbolType.SUBTRACT);
+	}
+
+	int evaluate(int x, int... vals) {
+		int rv = x;
+		for (int y : vals) {
+			rv -= y;
+		}
+		return rv;
+	}
+
+	int evaluate(int x) {
+		return -x;
+	}
+
+	@Override
+	public String toString() {
+		return String.format("SubtractSymbol()");
 	}
 }
 
@@ -135,28 +158,41 @@ class Variable extends Atom {
 	}
 }
 
+class GenericException extends RuntimeException {
+	private static final long serialVersionUID = 1L;
+
+	public GenericException(String message) {
+		super(message);
+	}
+}
+
+class NoSuchKeyException extends Error {
+	private static final long serialVersionUID = 1L;
+
+	public NoSuchKeyException(String message) {
+		super(message);
+	}
+}
+
 class SExpression extends Expression {
 	List<Expression> expressions = new ArrayList<Expression>();
 
 	int evaluate() {
 		int i = 0;
 		int rv = 0;
+		if (expressions.size() == 0) {
+			throw new GenericException("Invalid program: Empty S-Expression");
+		}
 		Expression a = expressions.get(i++);
-		System.out.println(a);
+		// System.out.println(a);
 		if (a instanceof SExpression) {
-			rv = a.evaluate();
+			for (int j = 0; j < expressions.size(); j++) {
+				Expression e = expressions.get(j);
+				rv = e.evaluate();
+			}
 		} else if (a instanceof Symbol) {
 			Symbol s = (Symbol) a;
 			switch (s.symtype) {
-			case ADD: {
-				int arr[] = new int[expressions.size() - 1];
-				while (i < expressions.size()) {
-					arr[i - 1] = expressions.get(i).evaluate();
-					i++;
-				}
-				rv = ((AddSymbol) s).evaluate(arr);
-			}
-				break;
 			case BIND: {
 				// b must be a variable name
 				Expression b = expressions.get(1);
@@ -168,8 +204,26 @@ class SExpression extends Expression {
 				}
 			}
 				break;
+			case ADD: {
+				int arr[] = new int[expressions.size() - 1];
+				if (expressions.size() < 2) {
+					throw new GenericException(
+							"Invalid program: ADD has invalid input");
+				}
+				while (i < expressions.size()) {
+					arr[i - 1] = expressions.get(i).evaluate();
+					i++;
+				}
+				// System.out.println(expressions);
+				rv = ((AddSymbol) s).evaluate(arr);
+			}
+				break;
 			case MULTIPLY: {
 				int arr[] = new int[expressions.size() - 1];
+				if (expressions.size() < 2) {
+					throw new GenericException(
+							"Invalid program: MUL invalid has input");
+				}
 				while (i < expressions.size()) {
 					arr[i - 1] = expressions.get(i).evaluate();
 					i++;
@@ -177,12 +231,47 @@ class SExpression extends Expression {
 				rv = ((MultiplySymbol) s).evaluate(arr);
 			}
 				break;
+			case SUBTRACT: {
+				if (expressions.size() < 2) {
+					throw new GenericException(
+							"Invalid program: SUBTRACT invalid has input");
+				}
+				int arr[] = new int[expressions.size() - 1];
+				while (i < expressions.size()) {
+					arr[i - 1] = expressions.get(i).evaluate();
+					i++;
+				}
+				SubtractSymbol sub = ((SubtractSymbol) s);
+				if (arr.length == 1) {
+					rv = sub.evaluate(arr[0]);
+				} else {
+					int x = arr[0];
+					arr[0] = 0;
+					rv = sub.evaluate(x, arr);
+					// System.out.println(rv);
+				}
+			}
+				break;
 			default:
 				break;
 			}
 		} else if (a instanceof Variable) {
-			rv = ((Variable) a).evaluate();
+			if (expressions.size() > 1) {
+				throw new GenericException(
+						"Invalid program: no other expression should follow");
+			}
+			Variable var = ((Variable) a);
+			try {
+				rv = var.evaluate();
+			} catch (NoSuchKeyException e) {
+				throw new GenericException(
+						"Invalid program: variable not defined: " + var.name);
+			}
 		} else if (a instanceof Number) {
+			if (expressions.size() > 1) {
+				throw new GenericException(
+						"Invalid program: no other expression should follow");
+			}
 			rv = ((Number) a).evaluate();
 		}
 		return rv;
@@ -199,7 +288,11 @@ class SymbolTable {
 	private Map<String, Integer> map = new HashMap<String, Integer>();
 
 	public int get(String name) {
-		return map.get(name);
+		if (map.containsKey(name))
+			return map.get(name);
+		else {
+			throw new NoSuchKeyException(name);
+		}
 	}
 
 	public void put(String name, int value) {
@@ -223,7 +316,7 @@ class Token {
 }
 
 enum LexerState {
-	START, ALPHABETS, NUMBERS, LPAREN, RPAREN, ADD, MULTIPLY, END
+	START, ALPHABETS, NUMBERS, LPAREN, RPAREN, ADD, MULTIPLY, END, SUBTRACT
 }
 
 class Lexer {
@@ -273,7 +366,11 @@ class Lexer {
 			try {
 				ch = get();
 			} catch (EOFException ex) {
-				return null;
+				// ex.printStackTrace();
+				if (lexerState == LexerState.START) {
+					return null;
+				} else
+					ch = 0;
 			}
 			switch (lexerState) {
 			case START:
@@ -298,6 +395,9 @@ class Lexer {
 				} else if (ch == '*') {
 					sb.append(ch);
 					lexerState = LexerState.MULTIPLY;
+				} else if (ch == '-') {
+					sb.append(ch);
+					lexerState = LexerState.SUBTRACT;
 				}
 				break;
 			case LPAREN:
@@ -318,6 +418,11 @@ class Lexer {
 			case MULTIPLY:
 				unget(ch);
 				ttype = TokenType.MULTIPLY;
+				lexerState = LexerState.END;
+				break;
+			case SUBTRACT:
+				unget(ch);
+				ttype = TokenType.SUBTRACT;
 				lexerState = LexerState.END;
 				break;
 			case ALPHABETS:
@@ -382,6 +487,7 @@ class SyntaxTreeBuilder {
 		while (true) {
 			try {
 				Token token = lexer.next();
+				// System.out.println(token);
 				if (token == null)
 					break;
 				switch (token.type) {
@@ -396,8 +502,8 @@ class SyntaxTreeBuilder {
 				case RIGHT_PAREN:
 					// end current S-Expression
 					if (stack.empty()) {
-						System.out.println("Extraneous Right Parentheses");
-						System.exit(-1);
+						throw new GenericException(
+								"Invalid program: Extraneous Right Parentheses");
 					}
 					currentSxp = stack.pop();
 					break;
@@ -416,6 +522,11 @@ class SyntaxTreeBuilder {
 					currentSxp.expressions.add(mult);
 				}
 					break;
+				case SUBTRACT: {
+					SubtractSymbol mult = new SubtractSymbol();
+					currentSxp.expressions.add(mult);
+				}
+					break;
 				case ALPHABETIC: {
 					Variable var = new Variable(token.value, symtab);
 					currentSxp.expressions.add(var);
@@ -430,7 +541,7 @@ class SyntaxTreeBuilder {
 				default:
 					break;
 				}
-				System.out.println("Token: " + token);
+				// System.out.println("Token: " + token);
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
@@ -441,11 +552,9 @@ class SyntaxTreeBuilder {
 
 public class Psil {
 	public static void main(String[] args) {
-		String myString = "(bind hello (+ 1 2))";
-		InputStream in = new ByteArrayInputStream(myString.getBytes());
 		SyntaxTreeBuilder builder = new SyntaxTreeBuilder();
-		SExpression root = builder.build(in);
-		System.out.println(root);
+		SExpression root = builder.build(System.in);
+		// System.out.println(root);
 		System.out.println(root.evaluate());
 	}
 }
