@@ -58,7 +58,16 @@ Sample invocation
 # Psil
 
 
-Psil is a minimal Lisp-like interpreter, which takes input from Standard input and produces output of the entered expression. Once you have build the software as show previously, you can invoke it as show below.
+Psil is a minimal Lisp-like interpreter, which takes input from Standard input and produces output of the entered expression.
+
+This minimal implementation supports the following:
+
+ * `+` opreator for addition
+ * `*` opreator for multiplication
+ * `bind` opreator for variable declaration
+ * `-` opreator for subtraction
+
+Once you have build the software as show previously, you can invoke it as show below.
 
 
 Sample invocation
@@ -66,5 +75,8 @@ Sample invocation
     $ java -cp target/takehome-1.0-SNAPSHOT.jar hs.psil.Psil 
     (+ (- (* 1 2 3) (bind hello (- 10))))
     16
+
+
+Please check this class `hs.psil.PsilTest` for more examples.
 
 
