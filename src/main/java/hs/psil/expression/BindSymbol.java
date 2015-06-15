@@ -1,7 +1,6 @@
 package hs.psil.expression;
 
 import hs.psil.SymbolTable;
-import hs.psil.SymbolType;
 
 public class BindSymbol extends Symbol {
 	SymbolTable symtab;

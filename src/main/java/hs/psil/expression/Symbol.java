@@ -1,6 +1,5 @@
 package hs.psil.expression;
 
-import hs.psil.SymbolType;
 
 public class Symbol extends Atom {
 	SymbolType symtype;
