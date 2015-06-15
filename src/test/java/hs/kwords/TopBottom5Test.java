@@ -1,12 +1,5 @@
 package hs.kwords;
 
-import hs.kwords.EnglishTokenizer;
-import hs.kwords.LowerCaseFilter;
-import hs.kwords.StopWordFilter;
-import hs.kwords.TokenStream;
-import hs.kwords.Tokenizer;
-import hs.kwords.WhiteSpaceTokenizer;
-
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.util.ArrayList;

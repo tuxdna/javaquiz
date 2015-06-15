@@ -1,10 +1,11 @@
 package hs.psil;
 
 import static org.junit.Assert.*;
-import hs.psil.Lexer;
-import hs.psil.SExpression;
-import hs.psil.SyntaxTreeBuilder;
-import hs.psil.Token;
+import hs.psil.exceptions.GenericException;
+import hs.psil.expression.SExpression;
+import hs.psil.lexer.Lexer;
+import hs.psil.lexer.Token;
+import hs.psil.lexer.TokenType;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
