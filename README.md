@@ -10,9 +10,39 @@ This software contains two programs
 
 The software is written in Java ( JDK 5 and above ), using Maven build system.
 
+### OS
+
+    $ cat /etc/issue
+    Ubuntu 14.10 \n \l
+
+### Kernel
+
+    $ uname -a
+    Linux matrix02 3.17.6-031706-generic #201412071535 SMP Sun Dec 7 20:36:35 UTC 2014 x86_64 x86_64 x86_64 GNU/Linux
+
+### Maven version
+
+    $ mvn -version
+    Apache Maven 3.0.5
+    Maven home: /usr/share/maven
+    Java version: 1.7.0_76, vendor: Oracle Corporation
+    Java home: /usr/lib/jvm/java-7-oracle/jre
+    Default locale: en_IN, platform encoding: UTF-8
+    OS name: "linux", version: "3.17.6-031706-generic", arch: "amd64", family: "unix"
+
+### Java version
+
+    $ java -version
+    java version "1.7.0_76"
+    Java(TM) SE Runtime Environment (build 1.7.0_76-b13)
+    Java HotSpot(TM) 64-Bit Server VM (build 24.76-b04, mixed mode)
+
+
+### Build and Run
+
 How to compile?
 
-    mvn package
+    mvn clean package
 
 How to run?
 
